@@ -9,10 +9,24 @@ import (
 	"net/http"
 	"strings"
 
+	"net/url"
+
 	"github.com/gregjones/httpcache"
 	"github.com/gregjones/httpcache/diskcache"
 	"golang.org/x/net/html"
 )
+
+func makeSafeURI(uri string) string {
+	// http:// 없을때 기본값 넣어주기
+	parsed, err := url.Parse(uri)
+	if err != nil {
+		panic(err)
+	}
+	if parsed.Scheme == "" {
+		return "http://" + uri
+	}
+	return uri
+}
 
 func getHTMLText(uri string) string {
 	cachedir := "./_cache"
@@ -20,6 +34,7 @@ func getHTMLText(uri string) string {
 	tp := httpcache.NewTransport(cache)
 	client := &http.Client{Transport: tp}
 
+	uri = makeSafeURI(uri)
 	resp, err := client.Get(uri)
 	if err != nil {
 		panic(err)
