@@ -2,6 +2,7 @@
 String metric based image crawler
 
 [![Build Status](https://travis-ci.org/if1live/rise.svg?branch=master)](https://travis-ci.org/if1live/rise)
+[![Go Report Card](https://goreportcard.com/badge/github.com/if1live/rise)](https://goreportcard.com/report/github.com/if1live/rise)
 
 ## Tutorial
 
