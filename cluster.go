@@ -66,3 +66,11 @@ func (c *clusterList) GetCluster(id int) []string {
 	}
 	return words
 }
+
+func (c *clusterList) GetClusters(ids []int) []string {
+	words := []string{}
+	for _, cid := range ids {
+		words = append(words, c.GetCluster(cid)...)
+	}
+	return words
+}

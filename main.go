@@ -95,10 +95,7 @@ func mainForShow() {
 	if cid == "" {
 		cluster.Show()
 	} else {
-		links := []string{}
-		for _, clusterid := range clusterIdList() {
-			links = append(links, cluster.GetCluster(clusterid)...)
-		}
+		links := cluster.GetClusters(clusterIdList())
 		for i, link := range links {
 			fmt.Printf("(%d/%d) %s\n", i+1, len(links), link)
 		}
@@ -143,11 +140,8 @@ func workerFetch(id int, jobs <-chan *fetchCommand, results chan<- *fetchResult)
 
 func mainForFetch() {
 	cluster := makeClusterFromFlag()
-	links := []string{}
 	cids := clusterIdList()
-	for _, clusterid := range cids {
-		links = append(links, cluster.GetCluster(clusterid)...)
-	}
+	links := cluster.GetClusters(cids)
 
 	linkcount := len(links)
 	if linkcount == 0 {
