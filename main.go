@@ -151,7 +151,7 @@ func mainForFetch() {
 
 	linkcount := len(links)
 	if linkcount == 0 {
-		log.Printf("No link found, cid=%d\n", cid)
+		log.Printf("No link found, cid=%s\n", cid)
 		return
 	}
 
