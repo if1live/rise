@@ -6,12 +6,15 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 
 	"flag"
 
 	"log"
 
 	"path/filepath"
+
+	"strconv"
 
 	"github.com/gregjones/httpcache"
 	"github.com/if1live/staticfilecache"
@@ -20,17 +23,29 @@ import (
 
 var cmd string
 var uri string
-var cid int
+var cid string
 var similarity float64
 var workerCount int
 var filter int
 var output string
 
+func clusterIdList() []int {
+	cids := []int{}
+	for _, c := range strings.Split(cid, ",") {
+		clusterid, err := strconv.Atoi(c)
+		if err != nil {
+			continue
+		}
+		cids = append(cids, clusterid)
+	}
+	return cids
+}
+
 type fetchConfig struct {
-	URL        string  `json:"url"`
-	ClusterID  int     `json:"cluster_id"`
-	Filter     int     `json:"filter"`
-	Similarity float64 `json:"similarity"`
+	URL           string  `json:"url"`
+	ClusterIDList []int   `json:"cluster_id_list"`
+	Filter        int     `json:"filter"`
+	Similarity    float64 `json:"similarity"`
 }
 
 func (m *fetchConfig) Marshal() []byte {
@@ -43,19 +58,19 @@ func (m *fetchConfig) Marshal() []byte {
 	return out.Bytes()
 }
 
-func makeClusterFromFlag() *distanceCluster {
+func makeClusterFromFlag() *clusterList {
 	htmltext := getHTMLText(uri)
 	links := parseHTMLText(htmltext)
 	for i, link := range links {
 		links[i] = ApplyFilter(link, filter)
 	}
-	return newCluster(links, similarity)
+	return newClusterList(links, similarity)
 }
 
 func init() {
 	flag.StringVar(&cmd, "cmd", "help", "command")
 	flag.StringVar(&uri, "uri", "", "target uri")
-	flag.IntVar(&cid, "cid", -1, "cluster id")
+	flag.StringVar(&cid, "cid", "", "cluster id")
 	flag.Float64Var(&similarity, "similarity", 0.9, "similarity")
 	flag.IntVar(&workerCount, "worker", 8, "worker count")
 	flag.IntVar(&filter, "filter", 0, "link filter")
@@ -77,10 +92,13 @@ func main() {
 
 func mainForShow() {
 	cluster := makeClusterFromFlag()
-	if cid < 0 || cid > cluster.MaxClusterID() {
+	if cid == "" {
 		cluster.Show()
 	} else {
-		links := cluster.GetCluster(cid)
+		links := []string{}
+		for _, clusterid := range clusterIdList() {
+			links = append(links, cluster.GetCluster(clusterid)...)
+		}
 		for i, link := range links {
 			fmt.Printf("(%d/%d) %s\n", i+1, len(links), link)
 		}
@@ -125,7 +143,12 @@ func workerFetch(id int, jobs <-chan *fetchCommand, results chan<- *fetchResult)
 
 func mainForFetch() {
 	cluster := makeClusterFromFlag()
-	links := cluster.GetCluster(cid)
+	links := []string{}
+	cids := clusterIdList()
+	for _, clusterid := range cids {
+		links = append(links, cluster.GetCluster(clusterid)...)
+	}
+
 	linkcount := len(links)
 	if linkcount == 0 {
 		log.Printf("No link found, cid=%d\n", cid)
@@ -141,10 +164,10 @@ func mainForFetch() {
 
 	// 다운로드에 사용한 정보 저장하기
 	config := &fetchConfig{
-		URL:        uri,
-		ClusterID:  cid,
-		Filter:     filter,
-		Similarity: similarity,
+		URL:           uri,
+		ClusterIDList: cids,
+		Filter:        filter,
+		Similarity:    similarity,
 	}
 	zip.Add("metadata.json", config.Marshal())
 

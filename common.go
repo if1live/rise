@@ -8,6 +8,9 @@ import (
 func ApplyFilter(link string, mode int) string {
 	if mode == 1 {
 		return filter_sliceExtension(link)
+	} else if mode == 999 {
+		// hard-coding
+		return strings.Replace(link, "s.jpg", ".jpg", -1)
 	}
 	// else
 	return link

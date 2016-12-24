@@ -6,101 +6,63 @@ import (
 	"github.com/xrash/smetrics"
 )
 
-type distanceMatrix struct {
-	links  []string
-	matrix [][]float64
-	size   int
-}
-
-func newMatrix(links []string) *distanceMatrix {
-	linkcount := len(links)
-
-	// 빈 매트릭스 일단 만들기
-	// 전부 0으로 채워둔다
-	m := make([][]float64, linkcount)
-	for i := 0; i < linkcount; i++ {
-		m[i] = make([]float64, linkcount)
-	}
-
-	// 대각선은 1로. 자기자신이 들어가니까
-	for i := 0; i < linkcount; i++ {
-		m[i][i] = 1
-	}
-
-	for i, link := range links {
-		for j := i + 1; j < linkcount; j++ {
-			otherlink := links[j]
-			dist := smetrics.Jaro(link, otherlink)
-			m[i][j] = dist
-			m[j][i] = dist
-		}
-	}
-
-	return &distanceMatrix{
-		links:  links,
-		matrix: m,
-		size:   linkcount,
-	}
-}
-
-type distanceCluster struct {
-	links       []string
+type clusterList struct {
+	words       []string
 	clusterlist []int
-	allowed     float64
+	similarity  float64
 }
 
-// 유사도가 비슷한 문자열끼리 같은 클러스터 ID를 부여한다
-func newCluster(links []string, allowed float64) *distanceCluster {
-	m := newMatrix(links)
+// 연속된 단어-단어의 유사도만으로 클러스터를 구성해도 문제없다
+func newClusterList(words []string, similarity float64) *clusterList {
+	if len(words) <= 1 {
+		return &clusterList{}
+	}
 
-	clusterid := 0
-	clusterlist := make([]int, m.size)
-	for i := 0; i < m.size; i++ {
+	wordcount := len(words)
+	clusterlist := make([]int, wordcount)
+	for i := 0; i < wordcount; i++ {
 		clusterlist[i] = -1
 	}
 
-	for i := 0; i < m.size; i++ {
-		if clusterlist[i] >= 0 {
-			continue
-		}
-		currcluster := clusterid
-		clusterid++
+	clusterid := 0
+	clusterlist[0] = clusterid
+	for i := 0; i < wordcount-1; i++ {
+		w1 := words[i]
+		w2 := words[i+1]
 
-		clusterlist[i] = currcluster
-		for j := i + 1; j < m.size; j++ {
-			if m.matrix[i][j] >= allowed {
-				clusterlist[j] = currcluster
-			} else {
-				// 불연속구간은 같은 클러스터로 취급하지 않는다
-				break
-			}
+		dist := smetrics.Jaro(w1, w2)
+		if dist >= similarity {
+			clusterlist[i+1] = clusterid
+		} else {
+			clusterid++
+			clusterlist[i+1] = clusterid
 		}
 	}
-
-	return &distanceCluster{
-		links:       links,
+	return &clusterList{
+		words:       words,
 		clusterlist: clusterlist,
-		allowed:     allowed,
+		similarity:  similarity,
 	}
 }
 
-func (c *distanceCluster) MaxClusterID() int {
-	last := len(c.links) - 1
+func (c *clusterList) MaxClusterID() int {
+	last := len(c.words) - 1
 	return c.clusterlist[last]
 }
-func (c *distanceCluster) Show() {
-	for i, link := range c.links {
+
+func (c *clusterList) Show() {
+	for i, word := range c.words {
 		cid := c.clusterlist[i]
-		fmt.Printf("cid=%d : %s\n", cid, link)
+		fmt.Printf("cid=%d : %s\n", cid, word)
 	}
 }
 
-func (c *distanceCluster) GetCluster(id int) []string {
-	links := []string{}
+func (c *clusterList) GetCluster(id int) []string {
+	words := []string{}
 	for i, cid := range c.clusterlist {
 		if cid == id {
-			links = append(links, c.links[i])
+			words = append(words, c.words[i])
 		}
 	}
-	return links
+	return words
 }
