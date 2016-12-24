@@ -28,6 +28,19 @@ func makeSafeURI(uri string) string {
 	return uri
 }
 
+func makeSafeImageURI(imguri, uri string) string {
+	parsed, _ := url.Parse(imguri)
+	if parsed.Host != "" {
+		return imguri
+	}
+
+	// 호스트가 없는 경우 원본 URL에서 짤라다 붙여주기
+	// 상대경로까지 고려하기
+	base, _ := url.Parse(uri)
+	next := base.ResolveReference(parsed)
+	return next.String()
+}
+
 func getHTMLText(uri string) string {
 	cachedir := "./_cache"
 	cache := diskcache.New(cachedir)

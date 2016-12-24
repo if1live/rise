@@ -121,18 +121,20 @@ func workerFetch(id int, jobs <-chan *fetchCommand, results chan<- *fetchResult)
 		if req.uri == "" {
 			return
 		}
-		uri := req.uri
 
-		log.Printf("[worker %d] download %s\n", id, uri)
+		imguri := req.uri
+		imguri = makeSafeImageURI(imguri, uri)
+
+		log.Printf("[worker %d] download %s\n", id, imguri)
 		cachedir := "./_cache_static"
 		cache := staticfilecache.New(cachedir)
 		tp := httpcache.NewTransport(cache)
 		client := &http.Client{Transport: tp}
-		resp, _ := client.Get(uri)
+		resp, _ := client.Get(imguri)
 
 		results <- &fetchResult{
 			resp: resp,
-			uri:  uri,
+			uri:  imguri,
 			idx:  req.idx,
 		}
 	}

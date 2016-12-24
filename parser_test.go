@@ -22,3 +22,26 @@ func TestMakeSafeURI(t *testing.T) {
 		}
 	}
 }
+
+func TestMakeSafeImageURI(t *testing.T) {
+	cases := []struct {
+		imguri   string
+		uri      string
+		expected string
+	}{
+		{"http://foo.com/bar.png", "http://foo.com/", "http://foo.com/bar.png"},
+		{"/bar.png", "http://foo.com/", "http://foo.com/bar.png"},
+		{"./bar.png", "http://foo.com/sample/", "http://foo.com/sample/bar.png"},
+		{"../bar.png", "http://foo.com/sample/", "http://foo.com/bar.png"},
+	}
+	for _, c := range cases {
+		v := makeSafeImageURI(c.imguri, c.uri)
+		if v != c.expected {
+			t.Error(
+				"For makeSafeImageURI",
+				"expected", c.expected,
+				"got", v,
+			)
+		}
+	}
+}
