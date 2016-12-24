@@ -22,3 +22,11 @@ _testmain.go
 *.exe
 *.test
 *.prof
+
+# cache
+_cache
+_cache_static
+
+# temp
+tmp.txt
+*.zip
