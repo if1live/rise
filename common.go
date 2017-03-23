@@ -5,9 +5,16 @@ import (
 	"strings"
 )
 
+const (
+	FilterSliceExtension    = 1
+	FilterRemoveQueryString = 2
+)
+
 func ApplyFilter(link string, mode int) string {
-	if mode == 1 {
+	if mode == FilterSliceExtension {
 		return filterSliceExtension(link)
+	} else if mode == FilterRemoveQueryString {
+		return filterRemoveQueryString(link)
 	} else if mode == 999 {
 		// hard-coding
 		return strings.Replace(link, "s.jpg", ".jpg", -1)
@@ -47,6 +54,11 @@ func filterSliceExtension(link string) string {
 		}
 	}
 	return link[:found]
+}
+
+func filterRemoveQueryString(link string) string {
+	tokens := strings.Split(link, "?")
+	return tokens[0]
 }
 
 func padLeft(str, pad string, length int) string {

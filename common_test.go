@@ -13,6 +13,11 @@ func TestApplyFilter(t *testing.T) {
 			1,
 			"http://google.com/helloworld.jpg",
 		},
+		{
+			"http://google.com/helloworld.jpg?w650",
+			2,
+			"http://google.com/helloworld.jpg",
+		},
 	}
 	for _, c := range cases {
 		actual := ApplyFilter(c.link, c.mode)
